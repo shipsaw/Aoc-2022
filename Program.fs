@@ -97,3 +97,42 @@ let total = File.ReadAllLines("rps.txt")
 printf $"Total: %d{total}\n"
 
 //////////////// Part 2 ///////////////////////
+
+let parseMoveAndOutcome (line: string): OpponentMove * Outcome =
+    let splitLine = line.Split(' ')
+    let om, outcome = splitLine[0], splitLine[1]
+    let omParsed = match om with
+                    | "A" -> OpponentMove Move.Rock
+                    | "B" -> OpponentMove Move.Paper
+                    | "C" -> OpponentMove Move.Scissors
+                    | _ -> ArgumentOutOfRangeException() |> raise
+    let outcomeParsed = match outcome with
+                        | "X" -> Outcome.Lost
+                        | "Y" -> Outcome.Draw
+                        | "Z" -> Outcome.Won
+                        | _ -> ArgumentOutOfRangeException() |> raise
+    in (omParsed, outcomeParsed)
+let determineMove (om: OpponentMove, outcome: Outcome): PlayerMove =
+    match (outcome, om) with
+    | Outcome.Draw,     OpponentMove Move.Rock -> PlayerMove Move.Rock
+    | Outcome.Draw,    OpponentMove Move.Paper -> PlayerMove Move.Paper
+    | Outcome.Draw, OpponentMove Move.Scissors -> PlayerMove Move.Scissors
+    | Outcome.Won,     OpponentMove Move.Scissors -> PlayerMove Move.Rock
+    | Outcome.Won,    OpponentMove Move.Rock -> PlayerMove Move.Paper
+    | Outcome.Won, OpponentMove Move.Paper -> PlayerMove Move.Scissors
+    | Outcome.Lost,     OpponentMove Move.Paper -> PlayerMove Move.Rock
+    | Outcome.Lost,    OpponentMove Move.Scissors -> PlayerMove Move.Paper
+    | Outcome.Lost, OpponentMove Move.Rock -> PlayerMove Move.Scissors
+    | _ -> ArgumentOutOfRangeException() |> raise
+
+let total2 = File.ReadAllLines("rps.txt")
+                |> Array.toList
+                |> List.map parseMoveAndOutcome
+                |> List.map(fun tup -> gameScore (snd tup) (determineMove tup) )
+                |> List.sum
+                
+printf $"Total Rigged: %d{total2}\n"
+
+///////////////////// ADVENT DAY 3 ////////////////////////////
+
+//////////////// Part 1 ///////////////////////
