@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "8EGoKvrnJL416tzpgW1hubzptsQoMuyqWZ+JR0XZ7yT6ebDfV04Kv2GIfUk0kfYTZSVM0bufJXhLBAmiE2aXNw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\lyter\\RiderProjects\\AdventCode1\\AdventCode1.fsproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\lyter\\.nuget\\packages\\fsharp.core\\7.0.0\\fsharp.core.7.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
