@@ -7,10 +7,13 @@
 
     <ItemGroup>
         <Compile Include="Program.fs" />
-        <Content Include="data.txt">
+        <Content Include="calories.txt">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include=".gitignore" />
+        <Content Include="rps.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>
