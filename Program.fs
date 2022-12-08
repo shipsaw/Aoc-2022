@@ -20,7 +20,7 @@ let combineVals (vals: int list): int =
         | [] -> maxTotal
     in g 0 0 vals
     
-printf $"Day 1(a): %d{combineVals data}\n"
+// printf $"Day 1(a): %d{combineVals data}\n"
 
 //////////////// Part 2 ///////////////////////
 let checkNewMax (runningTotal: int) (maxTotal: int[]): int[] =
@@ -38,7 +38,7 @@ let combineValsTop (vals: int list): int =
         | [] -> Array.sum maxTotal
     in g 0 [|0; 0; 0|] vals
     
-printf $"Day 1(b): %d{combineValsTop data}\n"
+// printf $"Day 1(b): %d{combineValsTop data}\n"
 
 ///////////////////// ADVENT DAY 2 ////////////////////////////
 
@@ -94,7 +94,7 @@ let total = File.ReadAllLines("rps.txt")
                 |> List.map(fun tup -> gameScore (determineWinner tup) (snd tup) )
                 |> List.sum
                 
-printf $"Total: %d{total}\n"
+// printf $"Total: %d{total}\n"
 
 //////////////// Part 2 ///////////////////////
 
@@ -131,8 +131,92 @@ let total2 = File.ReadAllLines("rps.txt")
                 |> List.map(fun tup -> gameScore (snd tup) (determineMove tup) )
                 |> List.sum
                 
-printf $"Total Rigged: %d{total2}\n"
+// printf $"Total Rigged: %d{total2}\n"
 
 ///////////////////// ADVENT DAY 3 ////////////////////////////
 
 //////////////// Part 1 ///////////////////////
+let ruksackData = File.ReadAllLines("ruksack.txt")
+                |> Array.toList
+                
+let getIntersect (line: string): char =
+    let lineLen = line.Length
+    let set1 = Set.ofSeq line[..((lineLen/2) - 1)]
+    let set2 = Set.ofSeq line[(lineLen/2)..]
+    in (Set.intersect set1 set2).MaximumElement
+    
+let charToInt (c: char): int =
+    let adjustLower = (int 'a') - 1
+    let adjustUpper = (int 'A') - 27
+    (int c) - (if Char.IsUpper c then adjustUpper else adjustLower)
+    
+let overlap = ruksackData
+            |> List.map getIntersect
+            |> List.map charToInt
+            |> List.sum
+
+// printf $"Priority sum: %d{overlap}\n"
+
+//////////////// Part 2 ///////////////////////
+let getIntersectBadge (lines: string list): int =
+    lines
+    |> List.map Set.ofSeq
+    |> List.reduce(Set.intersect)
+    |> Set.maxElement
+    |> charToInt
+
+let rec parseGroup (elves: string list) (acc: int): int =
+    match elves with
+    | [] -> acc
+    | elves -> parseGroup (elves[3..]) ((getIntersectBadge elves[0..2]) + acc)
+    
+let parseBadges (elves: string list): int =
+    parseGroup elves 0
+    
+// printf $"%d{parseBadges ruksackData}"
+
+///////////////////// ADVENT DAY 4 ////////////////////////////
+
+//////////////// Part 1 ///////////////////////
+
+let cleaningData = File.ReadAllLines("cleanup.txt")
+                |> Array.toList
+let testData = [
+    "2-4,6-8";
+    "2-3,4-5";
+    "5-7,7-9";
+    "2-8,3-7";
+    "6-6,4-6";
+    "2-6,4-8";
+]
+
+let fullOverlap (pairs: int list): bool =
+    let elf1: int * int = (pairs[0], pairs[1])
+    let elf2: int * int = (pairs[2], pairs[3])
+    (fst elf1 >= fst elf2 && snd elf1 <= snd elf2) ||
+    (fst elf2 >= fst elf1 && snd elf2 <= snd elf1)
+    
+let pairsFullOverlap (pairs: string list): int =
+    pairs
+    |> List.collect (fun x -> List.ofArray (x.Split [|'-'; ','|] ) )
+    |> List.map int
+    |> List.chunkBySize 4
+    |> List.filter fullOverlap
+    |> List.length
+
+// printf $"%d{pairsFullOverlap cleaningData}\n"
+
+//////////////// Part 2 ///////////////////////
+let partialOverlap (pairs: int list): bool =
+    let elf1: int * int = (pairs[0], pairs[1])
+    let elf2: int * int = (pairs[2], pairs[3])
+    not (snd elf1 < fst elf2 || snd elf2 < fst elf1)
+let pairsPartialOverlap (pairs: string list): int =
+    pairs
+    |> List.collect (fun x -> List.ofArray (x.Split [|'-'; ','|] ) )
+    |> List.map int
+    |> List.chunkBySize 4
+    |> List.filter partialOverlap
+    |> List.length
+
+printf $"%d{pairsPartialOverlap cleaningData}\n"
