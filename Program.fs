@@ -266,6 +266,28 @@ let run (rawIns: string list) (initCrate: Crates): char list =
     in finalState
     |> List.map (fun lst -> lst.Head)
     
-printf "Top crate on each stack: %s\n" (String.Concat(Array.ofList(run craneInstructions crateList)))
+// printf "Top crate on each stack: %s\n" (String.Concat(Array.ofList(run craneInstructions crateList)))
 
 //////////////// Part 2 ///////////////////////
+
+let updateCratesBulk (ins: Instruction) (crates: Crates): Crates =
+    let movedCrates = crates[ins.f][..ins.amt - 1]
+    let fromStack = crates[ins.f][ins.amt..]
+    let toStack = movedCrates @ crates[ins.t]
+    
+    crates
+    |> List.mapi (fun i x -> if i = ins.f then fromStack else x)
+    |> List.mapi (fun i x -> if i = ins.t then toStack else x)
+    
+let rec executeInstructionsBulk (ins: Instruction list) (crate: Crates): Crates =
+    match ins with
+    | [] -> crate
+    | x :: xs -> executeInstructionsBulk xs (updateCratesBulk x crate)
+    
+let runBulk (rawIns: string list) (initCrate: Crates): char list =
+    let ins = rawIns |> List.map stringToInstruction
+    let finalState = executeInstructionsBulk ins initCrate
+    in finalState
+    |> List.map (fun lst -> lst.Head)
+    
+// printf "Top crate on each stack: %s\n" (String.Concat(Array.ofList(runBulk craneInstructions crateList)))
