@@ -1,8 +1,5 @@
 ﻿open System
-open System.Collections.Generic
 open System.IO
-open System.Numerics
-open System.Threading
 open Microsoft.FSharp.Core
 
 ////////////////// ADVENT DAY 1 ///////////////////////////////
@@ -401,11 +398,13 @@ let processCommands (lines: string list): Status =
     let initStatus = { objMap = Map.ofList [ "/", baseNode ]; input = lines.Tail; currNode = baseNode }
     processLines initStatus
     
-// Map.toList (processCommands commands).objMap
-// |> List.filter (fun kvp -> (snd kvp).objType = Directory)
-// |> List.filter(fun kvp -> (snd kvp).size <= 100000)
-// |> List.sumBy(fun kvp -> (snd kvp).size)
-// |> printf "Total: %O\n"
+let totalToDelete =     
+    Map.toList (processCommands commands).objMap
+    |> List.filter (fun kvp -> (snd kvp).objType = Directory)
+    |> List.filter(fun kvp -> (snd kvp).size <= 100000)
+    |> List.sumBy(fun kvp -> (snd kvp).size)
+    
+// printf "Total: %O\n" totalToDelete
 
 //////////////// Part 2 ///////////////////////
 
@@ -424,3 +423,86 @@ let smallestNeededDirectory =
                 |> List.min
                 
 // printf $"Smallest directory needed: {smallestNeededDirectory}\n"
+
+///////////////////// ADVENT DAY 8 ////////////////////////////
+
+//////////////// Part 1 ///////////////////////
+
+type TreeData = (int option) list list
+let treeData: TreeData =
+             File.ReadAllLines("trees.txt")
+             |> Array.toList
+             |> List.map(List.ofSeq)
+             |> List.map(List.map(fun c -> Some ((int c) - (int '0'))))
+
+let sightLine (lst: int option list): int option list =
+    let rec g (lst: int option list) (state: int option) =
+        if lst = [] then [] else
+            match (lst.Head, state) with
+            | Some x, Some y when x > y -> lst.Head :: (g lst.Tail lst.Head)
+            | _ -> None :: (g lst.Tail state)
+    in g lst (Some -1)
+    
+let combineCell (x: int option) (y: int option): int option =
+    match (x, y) with
+    | Some x, _ -> Some x
+    | _, Some y -> Some y
+    | _, _ -> None
+    
+let combineViews (tree1row: int option list) (tree2row: int option list): int option list =
+    List.map2 combineCell tree2row tree1row
+        
+let leftView (treeData: TreeData): TreeData =
+    treeData
+    |> List.map(sightLine)
+    
+let rightView (treeData: TreeData): TreeData =
+    treeData
+    |> List.map(List.rev)
+    |> List.map(sightLine)
+    |> List.map(List.rev)
+    
+let topView (treeData: TreeData): TreeData =
+    treeData
+    |> List.transpose
+    |> List.map(sightLine)
+    |> List.transpose
+    
+let bottView (treeData: TreeData): TreeData =
+    treeData
+    |> List.transpose
+    |> List.map(List.rev)
+    |> List.map(sightLine)
+    |> List.map(List.rev)
+    |> List.transpose
+    
+let combinedView (treeData: TreeData): TreeData =
+    let left = leftView treeData
+    let right = rightView treeData
+    let top = topView treeData
+    let bottom = bottView treeData
+    let leftRight = (left, right) ||> List.map2(combineViews)
+    let topBottom = (top, bottom) ||> List.map2(combineViews)
+    let final = (leftRight, topBottom) ||> List.map2(combineViews)
+    final
+    
+let testTrees = [
+    "30373";
+    "25512";
+    "65332";
+    "33549";
+    "35390";
+]
+
+let testTreesProcessed =
+                    testTrees
+                    |> List.map(List.ofSeq)
+                    |> List.map(List.map(fun c -> Some ((int c) - (int '0'))))
+                    
+testTreesProcessed |> combinedView
+                    |> List.iter(fun x ->
+                        List.iter (fun o -> (printf "%O" o)) x
+                        printf "\n"
+                        )
+
+treeData |> combinedView |> List.concat |> List.filter(Option.isSome) |> List.length |> printf "Length: %d\n"
