@@ -322,45 +322,6 @@ let runParse (len: int) (msg: string): int =
 let commands = File.ReadAllLines("commands.txt")
             |> Array.toList
             
-let testData = [
-    "$ cd /";
-    "$ ls";
-    "dir a";
-    "14848514 b.txt";
-    "8504156 c.dat";
-    "dir d";
-    "$ cd a";
-    "$ ls";
-    "dir e";
-    "29116 f";
-    "2557 g";
-    "62596 h.lst";
-    "$ cd e";
-    "$ ls";
-    "584 i";
-    "$ cd ..";
-    "$ cd ..";
-    "$ cd d";
-    "$ ls";
-    "4060174 j";
-    "8033020 d.log";
-    "5626152 d.ext";
-    "7214296 k"
-]
-
-let testData2 = [
-    "$ cd /";
-    "$ ls";
-    "dir a";
-    "$ cd a";
-    "$ ls";
-    "dir a";
-    "2 a.txt";
-    "$ cd a";
-    "$ ls";
-    "99999 a.txt";
-]
-
 type ObjType
     = File
     | Directory
@@ -391,7 +352,6 @@ let parseLine (line: string): Operation =
     | [|"$"; "ls"|] -> GetChildren
     | [|"$"; "cd"; name |] -> ChangeNode name
     | [|"dir"; name|] -> DefineObject { name = name; size = 0; objType = Directory; parent = None }
-    // | [|num; name|] when Int32.TryParse(num, &res) -> DefineObject { name = name; size = res; objType = File; parent = None }
     | [|num; name|] when bigint.TryParse(num, &res) -> DefineObject { name = name; size = res; objType = File; parent = None }
     | _ -> raise (InvalidLine $"Invalid line provided: {line}")
 
@@ -402,27 +362,24 @@ let rec getDirectoryPath (obj: FsObject): string =
     
 let addDirectory (s: Status) (name: string): Status =
     let fullPath = s.currNode.name + name + "/"
-    // printf "Adding %s to the dict\n" fullPath
     let newDirectory = { objType = Directory; name = fullPath; size = 0; parent = Some s.currNode }
     let updatedMap = if s.objMap.ContainsKey fullPath then s.objMap
                      else s.objMap.Add (fullPath, newDirectory)
     in { s with objMap = updatedMap; currNode = newDirectory }                     
     
-let rec propogateFile (s: Status) (size: bigint) (nodePtr: FsObject): Status =
-     // printf "Adding %O to %s\n" size nodePtr.name
+let rec propagateFile (s: Status) (size: bigint) (nodePtr: FsObject): Status =
      let oldObject = s.objMap[nodePtr.name]
      let newMap = s.objMap
                      |> Map.remove nodePtr.name
                      |> Map.add nodePtr.name { oldObject with size = oldObject.size + size }
      match nodePtr.parent with
      | None -> { s with objMap = newMap }
-     | Some p -> propogateFile { s with objMap = newMap } size p
+     | Some p -> propagateFile { s with objMap = newMap } size p
     
     
 let processFile (s: Status) (obj: FsObject): Status =
-    // printf "Process file: %s size %O\n" obj.name obj.size
     match obj.objType with
-    | File -> propogateFile s obj.size s.currNode
+    | File -> propagateFile s obj.size s.currNode
     | Directory -> s
     
 let doOperation (s: Status) : Status =
@@ -444,20 +401,26 @@ let processCommands (lines: string list): Status =
     let initStatus = { objMap = Map.ofList [ "/", baseNode ]; input = lines.Tail; currNode = baseNode }
     processLines initStatus
     
-
-
-// Map.toList (processCommands testData2).objMap
+// Map.toList (processCommands commands).objMap
 // |> List.filter (fun kvp -> (snd kvp).objType = Directory)
 // |> List.filter(fun kvp -> (snd kvp).size <= 100000)
 // |> List.sumBy(fun kvp -> (snd kvp).size)
 // |> printf "Total: %O\n"
 
-Map.toList (processCommands commands).objMap
-|> List.filter (fun kvp -> (snd kvp).objType = Directory)
-|> List.filter(fun kvp -> (snd kvp).size <= 100000)
-|> List.sumBy(fun kvp -> (snd kvp).size)
-|> printf "Total: %O\n"
+//////////////// Part 2 ///////////////////////
 
-// testData
-// |> List.map parseLine
-// |> List.iter (printf "%O\n")
+let totalSpace: bigint = 70000000
+let unusedSpace: bigint = 30000000
+let directorySizes =
+                Map.toList (processCommands commands).objMap
+                |> List.filter (fun kvp -> (snd kvp).objType = Directory)
+                |> List.map (fun kvp -> (snd kvp).size)
+                
+let rootSize = List.max directorySizes                
+let spaceToFree = unusedSpace - (totalSpace - rootSize)
+let smallestNeededDirectory =
+                directorySizes
+                |> List.filter (fun s -> s >= spaceToFree)
+                |> List.min
+                
+// printf $"Smallest directory needed: {smallestNeededDirectory}\n"
