@@ -67,7 +67,7 @@ let logTail (bridge: Bridge) (Tail tail): Bridge =
 let parseInstruction (rawIns: string): Instruction =
    let instructionArray = rawIns.Split(' ')
    match instructionArray with
-   | [| _; x |] when not (box x :? int) -> raise (ArgumentException("Invalid instruction"))
+   // | [| _; x |] when not (box x :? int) -> raise (ArgumentException("Invalid instruction"))
    | [|"U"; x|] -> Up (int x)
    | [|"D"; x|] -> Down (int x)
    | [|"R"; x|] -> Right (int x)
@@ -93,7 +93,7 @@ let run (rawIns: string list): int =
    let initTail = Tail {x = 0; y = 0}
    let initState = { bridge = initBridge; head = initHead; tail = initTail }
    let finalState = (runInstructions initState instructionList).bridge
-   finalState |> Map.toList |> List.filter(fun kvp -> (snd kvp) > 1) |> List.length
+   finalState |> Map.toList |> List.length
 
 let finalOutput =
    printf $"%d{run testData}\n"
