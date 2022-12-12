@@ -20,7 +20,7 @@ let combineVals (vals: int list): int =
         | [] -> maxTotal
     in g 0 0 vals
     
-// printf $"Day 1(a): %d{combineVals data}\n"
+printf $"Day 1(a): %d{combineVals data}\n"
 
 //////////////// Part 2 ///////////////////////
 let checkNewMax (runningTotal: int) (maxTotal: int[]): int[] =
@@ -38,4 +38,5 @@ let combineValsTop (vals: int list): int =
         | [] -> Array.sum maxTotal
     in g 0 [|0; 0; 0|] vals
     
-printf $"Day 1(b): %d{combineValsTop data}\n"
+let execute =
+    printf $"Day 1(b): %d{combineValsTop data}\n"
