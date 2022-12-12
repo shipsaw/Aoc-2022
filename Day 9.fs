@@ -95,4 +95,5 @@ let run (rawIns: string list): int =
    let finalState = (runInstructions initState instructionList).bridge
    finalState |> Map.toList |> List.filter(fun kvp -> (snd kvp) > 1) |> List.length
 
-printf "Length: %d\n" (run testData)
+let finalOutput =
+   printf $"%d{run testData}\n"
