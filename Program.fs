@@ -1,5 +1,6 @@
 ﻿open System
 open System.IO
+open System.Net.Http
 open Microsoft.FSharp.Core
 
 ////////////////// ADVENT DAY 1 ///////////////////////////////
@@ -486,23 +487,86 @@ let combinedView (treeData: TreeData): TreeData =
     let final = (leftRight, topBottom) ||> List.map2(combineViews)
     final
     
-let testTrees = [
-    "30373";
-    "25512";
-    "65332";
-    "33549";
-    "35390";
-]
+let visibleTrees = treeData
+                   |> combinedView
+                   |> List.concat
+                   |> List.filter(Option.isSome)
+                   |> List.length
+                
+// printf "Visible trees: %d\n" visibleTrees
 
-let testTreesProcessed =
-                    testTrees
-                    |> List.map(List.ofSeq)
-                    |> List.map(List.map(fun c -> Some ((int c) - (int '0'))))
-                    
-testTreesProcessed |> combinedView
-                    |> List.iter(fun x ->
-                        List.iter (fun o -> (printf "%O" o)) x
-                        printf "\n"
-                        )
+//////////////// Part 2 ///////////////////////
 
-treeData |> combinedView |> List.concat |> List.filter(Option.isSome) |> List.length |> printf "Length: %d\n"
+// 4; 5; 3; 7; 5; 4; 
+
+type sightState
+    = Alive
+    | Blocked
+let sightFromState (lst: int list) (treeHeight: int): int =
+    let rec g (lst: int list) (th: int) (state: sightState) (cnt: int) =
+        // printf $"state is {state}, list is {lst}, count is {cnt}\n"
+                match (lst, th, state, cnt) with
+                | [], _, _, cnt -> cnt
+                | l, th, Alive, cnt when th > lst.Head -> g l.Tail th Alive (cnt + 1)
+                | l, th, Alive, cnt when th <= lst.Head -> g l.Tail th Blocked (cnt + 1)
+                | _ -> cnt
+    in g lst treeHeight Alive 0
+    
+let stringToNumberList (trees: string list): int list list =
+    trees
+    |> List.map(List.ofSeq)
+    |> List.map(List.map(fun c -> (int c) - (int '0')))
+    
+let getVisibilityLtoR (trees: int list list): int list list =
+    trees
+    |> List.map (fun row -> List.mapi( fun i -> sightFromState row[i+1..]) row)
+    
+let visibilityLR (trees: int list list): int list list =
+    trees
+    |> getVisibilityLtoR
+    
+let visibilityRL (trees: int list list): int list list =
+    trees
+    |> List.map(List.rev)
+    |> getVisibilityLtoR
+    |> List.map(List.rev)
+    
+let visibilityTB (trees: int list list): int list list =
+    trees
+    |> List.transpose
+    |> getVisibilityLtoR
+    |> List.transpose
+    
+let visibilityBT (trees: int list list): int list list =
+    trees
+    |> List.transpose
+    |> List.map(List.rev)
+    |> getVisibilityLtoR
+    |> List.map(List.rev)
+    |> List.transpose
+    
+let rec totalVisibility (trees: string list): int list list =
+    let tempTrees = trees |> stringToNumberList
+    
+    let leftRight = tempTrees |> visibilityLR
+    let rightLeft = tempTrees |> visibilityRL
+    let topBottom = tempTrees |> visibilityTB
+    let bottomTop = tempTrees |> visibilityBT
+    
+    let totalLR = List.mapi(fun i -> List.mapi(fun j col -> col * rightLeft[i][j])) leftRight
+    let totalTB = List.mapi(fun i -> List.mapi(fun j col -> col * bottomTop[i][j])) topBottom
+    List.mapi(fun i -> List.mapi(fun j col -> col * totalLR[i][j])) totalTB
+    
+let treeData2 = File.ReadAllLines("trees.txt") |> Array.toList
+             
+treeData2
+|> totalVisibility
+|> List.map(List.max)
+|> List.max
+|> printf "Max visibility: %d\n"
+
+// |> List.iter(fun x ->
+//     List.iter (fun o -> (printf "%d" o)) x
+//     printf "\n"
+//     )
+
