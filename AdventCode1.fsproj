@@ -14,7 +14,8 @@
         <Compile Include="Day 6.fs" />
         <Compile Include="Day 7.fs" />
         <Compile Include="Day 8.fs" />
-        <Compile Include="Day 9.fs" />
+        <Compile Include="Day 9(a).fs" />
+        <Compile Include="Day 9(b).fs" />
         <Compile Include="Program.fs" />
         <Content Include="calories.txt">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

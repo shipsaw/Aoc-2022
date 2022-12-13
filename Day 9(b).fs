@@ -1,4 +1,4 @@
-module AdventCode1.Day_9
+module AdventCode1.Day_9b
 
 open System
 open System.IO
@@ -9,7 +9,7 @@ open System.IO
 
 type Point = {x: int; y: int}
 type Head = Head of Point
-type Tail = Tail of Point
+type Tail = Tail of Point list
 let testData = [
     "R 4";
     "U 4";
@@ -31,33 +31,45 @@ type BridgeState = {
    tail: Tail
 }
 
-let touching (Head head) (Tail tail) =
-    abs(head.x - tail.x) <= 1 && abs(head.y - tail.y) <= 1
+let touching (p1: Point) (p2: Point) =
+    abs(p1.x - p2.x) <= 1 && abs(p1.y - p2.y) <= 1
 
-let moveTail (head: Head) (tail: Tail): Tail =
-   match (head, tail) with
-   | Head hp, Tail tp when hp.x > tp.x && hp.y > tp.y ->
-      Tail { x = tp.x + 1; y = tp.y + 1 }
-   | Head hp, Tail tp when hp.x > tp.x && hp.y = tp.y ->
-      Tail { tp with x = tp.x + 1 }
-   | Head hp, Tail tp when hp.x > tp.x && hp.y < tp.y ->
-      Tail { x = tp.x + 1; y = tp.y - 1 }
-   | Head hp, Tail tp when hp.x = tp.x && hp.y > tp.y ->
-      Tail { tp with y = tp.y + 1 }
-   | Head hp, Tail tp when hp.x = tp.x && hp.y < tp.y ->
-      Tail { tp with y = tp.y - 1 }
-   | Head hp, Tail tp when hp.x < tp.x && hp.y > tp.y ->
-      Tail { x = tp.x - 1; y = tp.y + 1 }
-   | Head hp, Tail tp when hp.x < tp.x && hp.y = tp.y ->
-      Tail { tp with x = tp.x - 1 }
-   | Head hp, Tail tp when hp.x < tp.x && hp.y < tp.y ->
-      Tail { x = tp.x - 1; y = tp.y - 1 }
+let movePoint (p1: Point) (p2: Point): Point =
+   match (p1, p2) with
+   | p1, p2 when p1.x > p2.x && p1.y > p2.y ->
+      { x = p2.x + 1; y = p2.y + 1 }
+   | p1, p2 when p1.x > p2.x && p1.y = p2.y ->
+      { p2 with x = p2.x + 1 }
+   | p1, p2 when p1.x > p2.x && p1.y < p2.y ->
+      { x = p2.x + 1; y = p2.y - 1 }
+   | p1, p2 when p1.x = p2.x && p1.y > p2.y ->
+      { p2 with y = p2.y + 1 }
+   | p1, p2 when p1.x = p2.x && p1.y < p2.y ->
+      { p2 with y = p2.y - 1 }
+   | p1, p2 when p1.x < p2.x && p1.y > p2.y ->
+      { x = p2.x - 1; y = p2.y + 1 }
+   | p1, p2 when p1.x < p2.x && p1.y = p2.y ->
+      { p2 with x = p2.x - 1 }
+   | p1, p2 when p1.x < p2.x && p1.y < p2.y ->
+      { x = p2.x - 1; y = p2.y - 1 }
    | _ -> raise (InvalidOperationException("Error moving the tail"))
    
+let rec moveTail (lead: Point) (rest: Point list) =
+   match rest with
+   | [] -> [ lead ]
+   | x :: xs -> 
+         if not (touching lead x)
+         then
+            let newLead = movePoint lead x
+            lead :: (moveTail newLead xs)
+         else
+            lead :: rest
+   
 let logTail (bridge: Bridge) (Tail tail): Bridge =
-   match Map.tryFind tail bridge with
-   | Some v -> Map.add tail (v + 1) bridge
-   | None -> Map.add tail 0 bridge
+   let tailEnd = List.last tail
+   match Map.tryFind tailEnd bridge with
+   | Some v -> Map.add tailEnd (v + 1) bridge
+   | None -> Map.add tailEnd 0 bridge
    
 let parseInstruction (rawIns: string): Instruction =
    let instructionArray = rawIns.Split(' ')
@@ -69,12 +81,18 @@ let parseInstruction (rawIns: string): Instruction =
    | _ -> raise (ArgumentException("Invalid instruction"))
    
 let updateState (bridgeState: BridgeState): BridgeState =
+   let (Head headPoint) = bridgeState.head
+   let (Tail tail) = bridgeState.tail
+   
+   
    let newTail =
-      if not (touching bridgeState.head bridgeState.tail)
-      then moveTail bridgeState.head bridgeState.tail
-      else bridgeState.tail
-   let newBridge = logTail bridgeState.bridge newTail
-   { bridge = newBridge; head = bridgeState.head; tail = newTail }
+      if not (touching headPoint tail.Head)
+      then 
+         let tailLead = movePoint headPoint tail.Head
+         moveTail tailLead tail.Tail
+      else tail
+   let newBridge = logTail bridgeState.bridge (Tail newTail)
+   { bridge = newBridge; head = bridgeState.head; tail = (Tail newTail) }
    
 let rec moveHead (bridgeState: BridgeState) (instruction: Instruction): BridgeState =
    let (Head point) = bridgeState.head
@@ -107,7 +125,7 @@ let run (rawIns: string list): int =
       rawIns |> List.map parseInstruction
    let initBridge = Map.empty<Point, int>
    let initHead = Head {x = 0; y = 0}
-   let initTail = Tail {x = 0; y = 0}
+   let initTail = Tail [ for _ in 1 .. 9 -> {x = 0; y = 0 } ]
    let initState = { bridge = initBridge; head = initHead; tail = initTail }
    let finalState = (runInstructions initState instructionList).bridge
    finalState |> Map.toList |> List.length
@@ -117,3 +135,4 @@ let data = File.ReadAllLines("bridge.txt")
             
 let finalOutput =
    printf $"%d{run data}\n"
+

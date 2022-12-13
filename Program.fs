@@ -2,4 +2,4 @@
 
 open AdventCode1
 
-Day_9.finalOutput
+Day_9b.finalOutput
