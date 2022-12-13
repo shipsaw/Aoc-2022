@@ -182,16 +182,33 @@ let rec runInstruction (history: Cycle list) (instructions: Instruction list): C
     | [] -> history
     | x :: xs -> runInstruction (decodeInstruction history x) xs
     
-let run (rawIns: string list) =
+let runStrength (rawIns: string list) =
     let parsedInstructions = rawIns |> List.map parseInstruction
     runInstruction [] parsedInstructions
     |> List.mapi(fun i x -> (i+1) * x.during)
     
 let data = File.ReadAllLines("cpuInstructions.txt")
             |> Array.toList
-let results =
+let strengthResults =
     data
-    |> run
+    |> runStrength
     
 let getSelection =
-    printf "%d\n" (results[19] + results[59] + results[99] + results[139] + results[179] + results[219])
+    printf "%d\n" (strengthResults[19] + strengthResults[59] + strengthResults[99] + strengthResults[139] + strengthResults[179] + strengthResults[219])
+    
+// Part 2
+
+let runX (rawIns: string list) =
+    let parsedInstructions = rawIns |> List.map parseInstruction
+    runInstruction [] parsedInstructions
+    
+let screen = [ 0 .. 239 ] |> List.map(fun x -> x % 40)
+
+let screenRendered (screen: int list) (instructions: int list) =
+    List.zip screen instructions
+    |> List.map (fun x -> if abs((snd x) -  (fst x)) <= 1 then '#' else '.' )
+    |> List.iteri (fun i x -> if (i + 1) % 40 <> 0 then printf $"{x}" else printf $"{x}\n" )
+
+let renderScreen = screenRendered screen (runX data |> List.map(fun x -> x.during))
+
+    
