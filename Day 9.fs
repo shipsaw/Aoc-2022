@@ -1,6 +1,7 @@
 module AdventCode1.Day_9
 
 open System
+open System.IO
 
 ////////////////// ADVENT DAY 9 ///////////////////////////////
 
@@ -20,7 +21,8 @@ let testData = [
     "R 2";
 ]
 
-type Instruction = Up of int | Down of int | Left of int | Right of int
+type Direction = Up | Down | Left | Right 
+type Instruction = Direction * int
 type Bridge = Map<Point, int>
 
 type BridgeState = {
@@ -28,13 +30,6 @@ type BridgeState = {
    head: Head
    tail: Tail
 }
-
-let moveHead (Head head) (instruction: Instruction): Head =
-   match instruction with
-   | Left chg -> Head { head with x = head.x - 1 }
-   | Right chg -> Head { head with x = head.x + 1 }
-   | Up chg -> Head { head with y = head.y + 1 }
-   | Down chg -> Head { head with y = head.y - 1 }
 
 let touching (Head head) (Tail tail) =
     abs(head.x - tail.x) <= 1 && abs(head.y - tail.y) <= 1
@@ -54,9 +49,9 @@ let moveTail (head: Head) (tail: Tail): Tail =
    | Head hp, Tail tp when hp.x < tp.x && hp.y > tp.y ->
       Tail { x = tp.x - 1; y = tp.y + 1 }
    | Head hp, Tail tp when hp.x < tp.x && hp.y = tp.y ->
-      Tail { tp with y = tp.y - 1 }
+      Tail { tp with x = tp.x - 1 }
    | Head hp, Tail tp when hp.x < tp.x && hp.y < tp.y ->
-      Tail { tp with y = tp.y - 1 }
+      Tail { x = tp.x - 1; y = tp.y - 1 }
    | _ -> raise (InvalidOperationException("Error moving the tail"))
    
 let logTail (bridge: Bridge) (Tail tail): Bridge =
@@ -67,23 +62,45 @@ let logTail (bridge: Bridge) (Tail tail): Bridge =
 let parseInstruction (rawIns: string): Instruction =
    let instructionArray = rawIns.Split(' ')
    match instructionArray with
-   // | [| _; x |] when not (box x :? int) -> raise (ArgumentException("Invalid instruction"))
-   | [|"U"; x|] -> Up (int x)
-   | [|"D"; x|] -> Down (int x)
-   | [|"R"; x|] -> Right (int x)
-   | [|"L"; x|] -> Left (int x)
+   | [|"U"; x|] -> (Up, (int x))
+   | [|"D"; x|] -> (Down, (int x))
+   | [|"R"; x|] -> (Right, (int x))
+   | [|"L"; x|] -> (Left, (int x))
    | _ -> raise (ArgumentException("Invalid instruction"))
    
-let runInstruction (bridgeState: BridgeState) (instruction: Instruction) (head: Head) (tail: Tail): BridgeState =
-   let newHead = moveHead head instruction
-   let newTail = if not (touching newHead tail) then moveTail newHead tail else tail
+let updateState (bridgeState: BridgeState): BridgeState =
+   let newTail =
+      if not (touching bridgeState.head bridgeState.tail)
+      then moveTail bridgeState.head bridgeState.tail
+      else bridgeState.tail
    let newBridge = logTail bridgeState.bridge newTail
-   { bridge = newBridge; head = newHead; tail = newTail }
+   { bridge = newBridge; head = bridgeState.head; tail = newTail }
    
+let rec moveHead (bridgeState: BridgeState) (instruction: Instruction): BridgeState =
+   let (Head point) = bridgeState.head
+   match (fst instruction, snd instruction) with
+   | _,0 -> bridgeState
+   | Left, chg ->
+      let newHead = Head { point with x = point.x - 1 }
+      let newState = updateState { bridgeState with head = newHead }
+      moveHead newState (Instruction (fst instruction, chg - 1))
+   | Right, chg ->
+      let newHead = Head { point with x = point.x + 1 }
+      let newState = updateState { bridgeState with head = newHead }
+      moveHead newState (Instruction (fst instruction, chg - 1))
+   | Up, chg ->
+      let newHead = Head { point with y = point.y + 1 }
+      let newState = updateState { bridgeState with head = newHead }
+      moveHead newState (Instruction (fst instruction, chg - 1))
+   | Down, chg ->
+      let newHead = Head { point with y = point.y - 1 }
+      let newState = updateState { bridgeState with head = newHead }
+      moveHead newState (Instruction (fst instruction, chg - 1))
+
 let rec runInstructions (bs: BridgeState) (instructions: Instruction list): BridgeState =
    match instructions with
    | [] -> bs
-   | s :: ss -> runInstructions (runInstruction bs s bs.head bs.tail) ss
+   | x :: xs -> runInstructions (moveHead bs x) xs
    
 let run (rawIns: string list): int =
    let instructionList =
@@ -95,5 +112,8 @@ let run (rawIns: string list): int =
    let finalState = (runInstructions initState instructionList).bridge
    finalState |> Map.toList |> List.length
 
+let data = File.ReadAllLines("bridge.txt")
+            |> Array.toList
+            
 let finalOutput =
-   printf $"%d{run testData}\n"
+   printf $"%d{run data}\n"
