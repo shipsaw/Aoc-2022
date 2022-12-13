@@ -1,5 +1,8 @@
 ﻿module AdventCode
 
+open System
 open AdventCode1
 
-Day_9b.finalOutput
+Day_10.getSelection
+
+    

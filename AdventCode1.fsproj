@@ -16,6 +16,7 @@
         <Compile Include="Day 8.fs" />
         <Compile Include="Day 9(a).fs" />
         <Compile Include="Day 9(b).fs" />
+        <Compile Include="Day 10.fs" />
         <Compile Include="Program.fs" />
         <Content Include="calories.txt">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -43,6 +44,9 @@
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="bridge.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="cpuInstructions.txt">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
