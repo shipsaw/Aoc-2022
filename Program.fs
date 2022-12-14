@@ -2,7 +2,5 @@
 
 open System
 open AdventCode1
-
-Day_10.getSelection
-
     
+Day_11.parseMonkey
